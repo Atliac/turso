@@ -23,6 +23,11 @@ pub fn translate_create_materialized_view(
                 .to_string(),
         ));
     }
+    if connection.mvcc_enabled() {
+        return Err(crate::LimboError::ParseError(
+            "Materialized views are not supported in MVCC mode".to_string(),
+        ));
+    }
 
     let normalized_view_name = normalize_ident(view_name.as_str());
 
@@ -239,9 +244,14 @@ pub fn translate_create_view(
     resolver: &Resolver,
     select_stmt: &ast::Select,
     _columns: &[ast::IndexedColumn],
-    _connection: Arc<Connection>,
+    connection: Arc<Connection>,
     program: &mut ProgramBuilder,
 ) -> Result<()> {
+    if connection.mvcc_enabled() {
+        return Err(crate::LimboError::ParseError(
+            "Views are not supported in MVCC mode".to_string(),
+        ));
+    }
     let normalized_view_name = normalize_ident(view_name.as_str());
 
     // Check for name conflicts with existing schema objects
